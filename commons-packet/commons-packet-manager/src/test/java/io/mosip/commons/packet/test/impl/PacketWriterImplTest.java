@@ -11,11 +11,12 @@ import io.mosip.commons.packet.spi.IPacketReader;
 import io.mosip.commons.packet.spi.IPacketWriter;
 import io.mosip.commons.packet.util.PacketManagerHelper;
 import io.mosip.commons.packet.util.ZipUtils;
+import io.mosip.kernel.biometrics.constant.BiometricType;
+import io.mosip.kernel.biometrics.constant.QualityType;
+import io.mosip.kernel.biometrics.entities.BDBInfo;
+import io.mosip.kernel.biometrics.entities.BIR;
 import io.mosip.kernel.biometrics.entities.BiometricRecord;
-import io.mosip.kernel.core.cbeffutil.entity.BDBInfo;
-import io.mosip.kernel.core.cbeffutil.entity.BIR;
-import io.mosip.kernel.core.cbeffutil.jaxbclasses.QualityType;
-import io.mosip.kernel.core.cbeffutil.jaxbclasses.RegistryIDType;
+import io.mosip.kernel.biometrics.entities.RegistryIDType;
 import io.mosip.kernel.core.cbeffutil.jaxbclasses.SingleType;
 import io.mosip.kernel.core.util.JsonUtils;
 import org.apache.commons.io.IOUtils;
@@ -89,7 +90,7 @@ public class PacketWriterImplTest {
         fieldMap.put("gender", "[ {\r\n  \"language\" : \"eng\",\r\n  \"value\" : \"Male\"\r\n}, {\r\n  \"language\" : \"ara\",\r\n  \"value\" : \"الذكر\"\r\n} ]");
 
         Map<String, String> metaMap = new HashMap<>();
-        metaMap.put("metaData", "[ {\r\n  \"label\" : \"registrationId\",\r\n  \"value\" : \"10001100770000320200720092256\"\r\n}, {\r\n  \"label\" : \"creationDate\",\r\n  \"value\" : \"2020-07-20T14:54:49.823Z\"\r\n}, {\r\n  \"label\" : \"Registration Client Version Number\",\r\n  \"value\" : \"1.0.10-rc2\"\r\n}, {\r\n  \"label\" : \"registrationType\",\r\n  \"value\" : \"New\"\r\n}, {\r\n  \"label\" : \"preRegistrationId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"machineId\",\r\n  \"value\" : \"10077\"\r\n}, {\r\n  \"label\" : \"centerId\",\r\n  \"value\" : \"10001\"\r\n}, {\r\n  \"label\" : \"dongleId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"keyIndex\",\r\n  \"value\" : \"4F:38:72:D9:F8:DB:94:E7:22:48:96:D0:91:01:6D:3C:64:90:2E:14:DC:D2:F8:14:1F:2A:A4:19:1A:BC:91:41\"\r\n}, {\r\n  \"label\" : \"consentOfApplicant\",\r\n  \"value\" : \"Yes\"\r\n} ]");
+        metaMap.put("metaData", "[ {\r\n  \"label\" : \"registrationId\",\r\n  \"value\" : \"10001100770000320200720092256\"\r\n}, {\r\n  \"label\" : \"creationDate\",\r\n  \"value\" : \"2020-07-20T14:54:49.823Z\"\r\n}, {\r\n  \"label\" : \"Registration Client Version Number\",\r\n  \"value\" : \"1.0.10\"\r\n}, {\r\n  \"label\" : \"registrationType\",\r\n  \"value\" : \"New\"\r\n}, {\r\n  \"label\" : \"preRegistrationId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"machineId\",\r\n  \"value\" : \"10077\"\r\n}, {\r\n  \"label\" : \"centerId\",\r\n  \"value\" : \"10001\"\r\n}, {\r\n  \"label\" : \"dongleId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"keyIndex\",\r\n  \"value\" : \"4F:38:72:D9:F8:DB:94:E7:22:48:96:D0:91:01:6D:3C:64:90:2E:14:DC:D2:F8:14:1F:2A:A4:19:1A:BC:91:41\"\r\n}, {\r\n  \"label\" : \"consentOfApplicant\",\r\n  \"value\" : \"Yes\"\r\n} ]");
         metaMap.put("operationsData", "[ {\r\n  \"label\" : \"officerId\",\r\n  \"value\" : \"110122\"\r\n}, {\r\n  \"label\" : \"officerBiometricFileName\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"supervisorId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"supervisorBiometricFileName\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"supervisorPassword\",\r\n  \"value\" : \"false\"\r\n}, {\r\n  \"label\" : \"officerPassword\",\r\n  \"value\" : \"true\"\r\n}, {\r\n  \"label\" : \"supervisorPIN\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"officerPIN\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"supervisorOTPAuthentication\",\r\n  \"value\" : \"false\"\r\n}, {\r\n  \"label\" : \"officerOTPAuthentication\",\r\n  \"value\" : \"false\"\r\n} ]");
 
         Map<String, String> audit = new HashMap<>();
@@ -106,18 +107,16 @@ public class PacketWriterImplTest {
         document.setFormat("jpg");
         document.setType("DOC004");
 
-        List<BIR> birTypeList = new ArrayList<>();
-        BIR birType1 = new BIR();
-        BDBInfo bdbInfoType1 = new BDBInfo();
-        RegistryIDType registryIDType = new RegistryIDType();
-        registryIDType.setOrganization("Mosip");
-        registryIDType.setType("257");
-        QualityType quality = new QualityType();
+        List<io.mosip.kernel.biometrics.entities.BIR> birTypeList = new ArrayList<>();
+        io.mosip.kernel.biometrics.entities.BIR birType1 = new BIR.BIRBuilder().build();
+        io.mosip.kernel.biometrics.entities.BDBInfo bdbInfoType1 = new BDBInfo.BDBInfoBuilder().build();
+        io.mosip.kernel.biometrics.entities.RegistryIDType registryIDType = new RegistryIDType("Mosip", "257");
+        io.mosip.kernel.biometrics.constant.QualityType quality = new QualityType();
         quality.setAlgorithm(registryIDType);
         quality.setScore(90l);
         bdbInfoType1.setQuality(quality);
-        SingleType singleType1 = SingleType.FINGER;
-        List<SingleType> singleTypeList1 = new ArrayList<>();
+        BiometricType singleType1 = BiometricType.FINGER;
+        List<BiometricType> singleTypeList1 = new ArrayList<>();
         singleTypeList1.add(singleType1);
         List<String> subtype1 = new ArrayList<>(Arrays.asList("Left", "RingFinger"));
         bdbInfoType1.setSubtype(subtype1);

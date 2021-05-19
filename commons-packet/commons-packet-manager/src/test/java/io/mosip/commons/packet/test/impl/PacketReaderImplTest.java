@@ -8,6 +8,7 @@ import io.mosip.commons.packet.exception.GetAllIdentityException;
 import io.mosip.commons.packet.exception.GetAllMetaInfoException;
 import io.mosip.commons.packet.exception.GetDocumentException;
 import io.mosip.commons.packet.exception.PacketKeeperException;
+import io.mosip.commons.packet.exception.PacketValidationFailureException;
 import io.mosip.commons.packet.impl.PacketReaderImpl;
 import io.mosip.commons.packet.keeper.PacketKeeper;
 import io.mosip.commons.packet.spi.IPacketReader;
@@ -16,8 +17,12 @@ import io.mosip.commons.packet.util.PacketValidator;
 import io.mosip.commons.packet.util.ZipUtils;
 import io.mosip.kernel.biometrics.entities.BiometricRecord;
 import io.mosip.kernel.core.cbeffutil.common.CbeffValidator;
+import io.mosip.kernel.core.cbeffutil.entity.BDBInfo;
 import io.mosip.kernel.core.cbeffutil.entity.BIR;
 import io.mosip.kernel.core.cbeffutil.jaxbclasses.BIRType;
+import io.mosip.kernel.core.cbeffutil.jaxbclasses.QualityType;
+import io.mosip.kernel.core.cbeffutil.jaxbclasses.RegistryIDType;
+import io.mosip.kernel.core.cbeffutil.jaxbclasses.SingleType;
 import io.mosip.kernel.core.idobjectvalidator.exception.IdObjectIOException;
 import io.mosip.kernel.core.idobjectvalidator.exception.IdObjectValidationFailedException;
 import io.mosip.kernel.core.idobjectvalidator.exception.InvalidIdSchemaException;
@@ -44,10 +49,8 @@ import org.springframework.util.CollectionUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 import static io.mosip.commons.packet.constants.PacketManagerConstants.*;
 import static io.mosip.commons.packet.constants.PacketManagerConstants.VALUE;
@@ -206,19 +209,18 @@ public class PacketReaderImplTest {
     }
 
     @Test
-    public void validatePacketTest() throws JsonProcessingException, PacketKeeperException, InvalidIdSchemaException, IdObjectValidationFailedException, IdObjectIOException, IOException {
+    public void validatePacketTest() throws JsonProcessingException, PacketKeeperException, InvalidIdSchemaException, IdObjectValidationFailedException, IdObjectIOException, IOException, NoSuchAlgorithmException {
         when(packetValidator.validate(anyString(), anyString(), anyString(), anyMap())).thenReturn(true);
         boolean result = iPacketReader.validatePacket("id", "source", "process");
 
         assertTrue("Should be true", result);
     }
 
-    @Test
-    public void validatePacketExceptionTest() throws JsonProcessingException, PacketKeeperException, InvalidIdSchemaException, IdObjectValidationFailedException, IdObjectIOException, IOException {
+    @Test(expected = PacketValidationFailureException.class)
+    public void validatePacketExceptionTest() throws JsonProcessingException, PacketKeeperException, InvalidIdSchemaException, IdObjectValidationFailedException, IdObjectIOException, IOException, NoSuchAlgorithmException {
         when(packetValidator.validate(anyString(), anyString(), anyString(), anyMap())).thenThrow(new IOException("exception"));
         boolean result = iPacketReader.validatePacket("id",  "source","process");
 
-        assertFalse("Should be true", result);
     }
 
     @Test
@@ -285,13 +287,29 @@ public class PacketReaderImplTest {
 
     @Test
     public void getBiometricsTest() throws Exception {
-        List<String> list = Lists.newArrayList("phone", "email");
         BIRType birType = new BIRType();
         BIRType birType1 = new BIRType();
         BIRType birType2 = new BIRType();
         birType.setBir(Lists.newArrayList(birType1, birType2));
         BIR bir1 = new BIR();
+        BDBInfo bdbInfoType1 = new BDBInfo();
+        RegistryIDType registryIDType = new RegistryIDType();
+        registryIDType.setOrganization("Mosip");
+        registryIDType.setType("257");
+        QualityType quality = new QualityType();
+        quality.setAlgorithm(registryIDType);
+        quality.setScore(90l);
+        bdbInfoType1.setQuality(quality);
+        SingleType singleType1 = SingleType.FINGER;
+        List<SingleType> singleTypeList1 = new ArrayList<>();
+        singleTypeList1.add(singleType1);
+        List<String> subtype1 = new ArrayList<>(Arrays.asList("Left", "RingFinger"));
+        bdbInfoType1.setSubtype(subtype1);
+        bdbInfoType1.setType(singleTypeList1);
+        bdbInfoType1.setFormat(registryIDType);
+        bir1.setBdbInfo(bdbInfoType1);
         BIR bir2 = new BIR();
+        bir2.setBdbInfo(bdbInfoType1);
 
         PowerMockito.mockStatic(CbeffValidator.class);
         when(CbeffValidator.getBIRFromXML(any())).thenReturn(birType);
@@ -311,11 +329,28 @@ public class PacketReaderImplTest {
         BIRType birType2 = new BIRType();
         birType.setBir(Lists.newArrayList(birType1, birType2));
         BIR bir1 = new BIR();
+        BDBInfo bdbInfoType1 = new BDBInfo();
+        RegistryIDType registryIDType = new RegistryIDType();
+        registryIDType.setOrganization("Mosip");
+        registryIDType.setType("257");
+        QualityType quality = new QualityType();
+        quality.setAlgorithm(registryIDType);
+        quality.setScore(90l);
+        bdbInfoType1.setQuality(quality);
+        SingleType singleType1 = SingleType.FINGER;
+        List<SingleType> singleTypeList1 = new ArrayList<>();
+        singleTypeList1.add(singleType1);
+        List<String> subtype1 = new ArrayList<>(Arrays.asList("Left", "RingFinger"));
+        bdbInfoType1.setSubtype(subtype1);
+        bdbInfoType1.setType(singleTypeList1);
+        bdbInfoType1.setFormat(registryIDType);
+        bir1.setBdbInfo(bdbInfoType1);
         BIR bir2 = new BIR();
+        bir2.setBdbInfo(bdbInfoType1);
 
         Map<String, Object> keyValueMap = new LinkedHashMap<>();
         keyValueMap.put("operationsData", "[{\n  \"label\\\" : \\\"officerId\\\",\n  \\\"value\\\" : \\\"110012\\\"\n}, {\n  \\\"label\\\" : \\\"officerBiometricFileName\\\",\n  \\\"value\\\" : \\\"officer_bio_cbeff\\\"\n}, {\n  \\\"label\\\" : \\\"supervisorId\\\",\n  \\\"value\\\" : null\n}, {\n  \\\"label\\\" : \\\"supervisorBiometricFileName\\\",\n  \\\"value\\\" : null\n}, {\n  \\\"label\\\" : \\\"supervisorPassword\\\",\n  \\\"value\\\" : \\\"false\\\"\n}, {\n  \\\"label\\\" : \\\"officerPassword\\\",\n  \\\"value\\\" : \\\"true\\\"\n}, {\n  \\\"label\\\" : \\\"supervisorPIN\\\",\n  \\\"value\\\" : null\n}, {\n  \\\"label\\\" : \\\"officerPIN\\\",\n  \\\"value\\\" : null\n}]");
-        keyValueMap.put("metaData", "[{\r\n  \"label\" : \"registrationId\",\r\n  \"value\" : \"10001100770000320200720092256\"\r\n}, {\r\n  \"label\" : \"creationDate\",\r\n  \"value\" : \"2020-07-20T14:54:49.823Z\"\r\n}, {\r\n  \"label\" : \"Registration Client Version Number\",\r\n  \"value\" : \"1.0.10-rc2\"\r\n}, {\r\n  \"label\" : \"registrationType\",\r\n  \"value\" : \"New\"\r\n}, {\r\n  \"label\" : \"preRegistrationId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"machineId\",\r\n  \"value\" : \"10077\"\r\n}, {\r\n  \"label\" : \"centerId\",\r\n  \"value\" : \"10001\"\r\n}, {\r\n  \"label\" : \"dongleId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"keyIndex\",\r\n  \"value\" : \"4F:38:72:D9:F8:DB:94:E7:22:48:96:D0:91:01:6D:3C:64:90:2E:14:DC:D2:F8:14:1F:2A:A4:19:1A:BC:91:41\"\r\n}, {\r\n  \"label\" : \"consentOfApplicant\",\r\n  \"value\" : \"Yes} ]");
+        keyValueMap.put("metaData", "[{\r\n  \"label\" : \"registrationId\",\r\n  \"value\" : \"10001100770000320200720092256\"\r\n}, {\r\n  \"label\" : \"creationDate\",\r\n  \"value\" : \"2020-07-20T14:54:49.823Z\"\r\n}, {\r\n  \"label\" : \"Registration Client Version Number\",\r\n  \"value\" : \"1.0.10\"\r\n}, {\r\n  \"label\" : \"registrationType\",\r\n  \"value\" : \"New\"\r\n}, {\r\n  \"label\" : \"preRegistrationId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"machineId\",\r\n  \"value\" : \"10077\"\r\n}, {\r\n  \"label\" : \"centerId\",\r\n  \"value\" : \"10001\"\r\n}, {\r\n  \"label\" : \"dongleId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"keyIndex\",\r\n  \"value\" : \"4F:38:72:D9:F8:DB:94:E7:22:48:96:D0:91:01:6D:3C:64:90:2E:14:DC:D2:F8:14:1F:2A:A4:19:1A:BC:91:41\"\r\n}, {\r\n  \"label\" : \"consentOfApplicant\",\r\n  \"value\" : \"Yes} ]");
         Map<String, Object> finalMap = new LinkedHashMap<>();
         finalMap.put("identity", keyValueMap);
 
@@ -364,7 +399,7 @@ public class PacketReaderImplTest {
                 "\t\"label\": \"officerOTPAuthentication\",\n" +
                 "\t\"value\": \"false\"\n" +
                 "}]");
-        keyValueMap.put("metaData", "\"[ {\r\n  \"label\" : \"registrationId\",\r\n  \"value\" : \"10001100770000320200720092256\"\r\n}, {\r\n  \"label\" : \"creationDate\",\r\n  \"value\" : \"2020-07-20T14:54:49.823Z\"\r\n}, {\r\n  \"label\" : \"Registration Client Version Number\",\r\n  \"value\" : \"1.0.10-rc2\"\r\n}, {\r\n  \"label\" : \"registrationType\",\r\n  \"value\" : \"New\"\r\n}, {\r\n  \"label\" : \"preRegistrationId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"machineId\",\r\n  \"value\" : \"10077\"\r\n}, {\r\n  \"label\" : \"centerId\",\r\n  \"value\" : \"10001\"\r\n}, {\r\n  \"label\" : \"dongleId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"keyIndex\",\r\n  \"value\" : \"4F:38:72:D9:F8:DB:94:E7:22:48:96:D0:91:01:6D:3C:64:90:2E:14:DC:D2:F8:14:1F:2A:A4:19:1A:BC:91:41\"\r\n}, {\r\n  \"label\" : \"consentOfApplicant\",\r\n  \"value\" : \"Yes\"\r\n} ]\"");
+        keyValueMap.put("metaData", "\"[ {\r\n  \"label\" : \"registrationId\",\r\n  \"value\" : \"10001100770000320200720092256\"\r\n}, {\r\n  \"label\" : \"creationDate\",\r\n  \"value\" : \"2020-07-20T14:54:49.823Z\"\r\n}, {\r\n  \"label\" : \"Registration Client Version Number\",\r\n  \"value\" : \"1.0.10\"\r\n}, {\r\n  \"label\" : \"registrationType\",\r\n  \"value\" : \"New\"\r\n}, {\r\n  \"label\" : \"preRegistrationId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"machineId\",\r\n  \"value\" : \"10077\"\r\n}, {\r\n  \"label\" : \"centerId\",\r\n  \"value\" : \"10001\"\r\n}, {\r\n  \"label\" : \"dongleId\",\r\n  \"value\" : null\r\n}, {\r\n  \"label\" : \"keyIndex\",\r\n  \"value\" : \"4F:38:72:D9:F8:DB:94:E7:22:48:96:D0:91:01:6D:3C:64:90:2E:14:DC:D2:F8:14:1F:2A:A4:19:1A:BC:91:41\"\r\n}, {\r\n  \"label\" : \"consentOfApplicant\",\r\n  \"value\" : \"Yes\"\r\n} ]\"");
         Map<String, Object> finalMap = new LinkedHashMap<>();
         finalMap.put("identity", keyValueMap);
 
