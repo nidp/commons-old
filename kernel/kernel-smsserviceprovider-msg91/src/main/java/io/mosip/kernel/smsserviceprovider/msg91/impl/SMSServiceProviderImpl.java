@@ -1,8 +1,9 @@
 /**
- * 
+ *
  */
 package io.mosip.kernel.smsserviceprovider.msg91.impl;
 
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,9 @@ import io.mosip.kernel.core.notification.spi.SMSServiceProvider;
 import io.mosip.kernel.core.util.StringUtils;
 import io.mosip.kernel.smsserviceprovider.msg91.constant.SmsExceptionConstant;
 import io.mosip.kernel.smsserviceprovider.msg91.constant.SmsPropertyConstant;
+
+import java.io.UnsupportedEncodingException;
+import java.util.regex.Pattern;
 
 /**
  * @author Ritesh Sinha
@@ -58,19 +62,37 @@ public class SMSServiceProviderImpl implements SMSServiceProvider {
 	@Override
 	public SMSResponseDto sendSms(String contactNumber, String message) {
 		SMSResponseDto smsResponseDTO = new SMSResponseDto();
-		validateInput(contactNumber);
-		UriComponentsBuilder sms = UriComponentsBuilder.fromHttpUrl(api)
-				.queryParam(SmsPropertyConstant.AUTH_KEY.getProperty(), authkey)
-				.queryParam(SmsPropertyConstant.SMS_MESSAGE.getProperty(), message)
-				.queryParam(SmsPropertyConstant.ROUTE.getProperty(), route)
-				.queryParam(SmsPropertyConstant.SENDER_ID.getProperty(), sender)
-				.queryParam(SmsPropertyConstant.RECIPIENT_NUMBER.getProperty(), contactNumber)
-				.queryParam(SmsPropertyConstant.UNICODE.getProperty(), unicode)
-				.queryParam(SmsPropertyConstant.COUNTRY_CODE.getProperty(), countryCode);
+//		validateInput(contactNumber);
+//		UriComponentsBuilder sms = UriComponentsBuilder.fromHttpUrl(api)
+//				.queryParam(SmsPropertyConstant.AUTH_KEY.getProperty(), authkey)
+//				.queryParam(SmsPropertyConstant.SMS_MESSAGE.getProperty(), message)
+//				.queryParam(SmsPropertyConstant.ROUTE.getProperty(), route)
+//				.queryParam(SmsPropertyConstant.SENDER_ID.getProperty(), sender)
+//				.queryParam(SmsPropertyConstant.RECIPIENT_NUMBER.getProperty(), contactNumber)
+//				.queryParam(SmsPropertyConstant.UNICODE.getProperty(), unicode)
+//				.queryParam(SmsPropertyConstant.COUNTRY_CODE.getProperty(), countryCode);
 		try {
-			restTemplate.getForEntity(sms.toUriString(), String.class);
+			String smsUrl="";
+			String encoding="";
+			try {
+				if (Pattern.compile("([ሀ-ፖ]+)").matcher(message).find()) {
+					//System.out.println("Amharic Found");
+					encoding = "&coding=2&charset=utf-8";
+//					byte[] bytesEncoded =Base64.encodeBase64(message.getBytes("UTF-16LE"));
+//					message = new String(bytesEncoded);
+				} else {
+					//System.out.println("English");
+					encoding = "";
+				}
+			}
+			catch (Exception e) {
+				e.printStackTrace();
+			}
+			smsUrl="http://172.16.127.234:13013/cgi-bin/sendsms?user=tester&pass=foobar&to="+contactNumber+"&text="+message+"&from=9779"+encoding;
+			restTemplate.getForEntity(smsUrl, String.class);
 		} catch (HttpClientErrorException | HttpServerErrorException e) {
-			throw new RuntimeException(e.getResponseBodyAsString());
+			smsResponseDTO.setMessage(e.getResponseBodyAsString());
+			smsResponseDTO.setStatus("error");
 		}
 		smsResponseDTO.setMessage(SmsPropertyConstant.SUCCESS_RESPONSE.getProperty());
 		smsResponseDTO.setStatus("success");
@@ -84,6 +106,30 @@ public class SMSServiceProviderImpl implements SMSServiceProvider {
 					SmsExceptionConstant.SMS_INVALID_CONTACT_NUMBER.getErrorMessage() + numberLength
 							+ SmsPropertyConstant.SUFFIX_MESSAGE.getProperty());
 		}
+	}
+
+
+	public static void main(String[] args) {
+		String phone="0911319132";
+		String message="Kannel SMS Test";
+		if(args.length==1)
+			phone=args[0];
+		if(args.length==2)
+			message=args[1];
+
+		SMSServiceProviderImpl sender = new SMSServiceProviderImpl();
+		sender.restTemplate= new RestTemplate();
+
+		SMSResponseDto smsResponseDTO=null;
+		System.out.printf("SMS TEST: Sending Message To:"+phone+", Message: "+message+"" );
+		smsResponseDTO =sender.sendSms(phone,message);
+		System.out.println("TEST RESULT: "+"Status:"+smsResponseDTO.getStatus()+" Message:"+smsResponseDTO.getMessage());
+
+		message="ውድ ደንበኛችን ይህ ከደረሶ አማርኝ  ይስራል ማለት ነው\n" +
+				"አናመሰገናልን።";
+		System.out.printf("SMS AMHARIC TEST: Sending Message To:"+phone+", Message: "+message+"" );
+		smsResponseDTO =sender.sendSms(phone,message);
+		System.out.println("TEST RESULT: "+"Status:"+smsResponseDTO.getStatus()+" Message:"+smsResponseDTO.getMessage());
 	}
 
 }
