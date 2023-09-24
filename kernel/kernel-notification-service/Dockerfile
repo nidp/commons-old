@@ -71,11 +71,10 @@ CMD if [ "$is_glowroot_env" = "present" ]; then \
     rm -rf glowroot.zip ; \
     sed -i 's/<service_name>/kernel-notification-service/g' glowroot/glowroot.properties ; \
      wget "${runtime_dep_url_env}/kernel-auth-adapter.jar" -O ./mosip-lib/kernel-auth-adapter.jar; \
-     wget "${runtime_dep_url_env}/kernel-smsserviceprovider-msg91.jar" -O ./mosip-lib/kernel-smsserviceprovider-msg91.jar; \
+     wget "${runtime_dep_url_env}/kernel-smsserviceprovider-msg91-1.2.0-SNAPSHOT.jar" -O ./mosip-lib/kernel-smsserviceprovider-msg91-1.2.0-SNAPSHOT.jar; \
     java -jar -javaagent:glowroot/glowroot.jar -Dloader.path=./mosip-lib/ -Dspring.cloud.config.label="${spring_config_label_env}" -Dspring.profiles.active="${active_profile_env}" -Dspring.cloud.config.uri="${spring_config_url_env}" kernel-notification-service.jar ; \
     else \
      wget "${runtime_dep_url_env}/kernel-auth-adapter.jar" -O ./mosip-lib/kernel-auth-adapter.jar; \
-     wget "${runtime_dep_url_env}/kernel-smsserviceprovider-msg91.jar" -O ./mosip-lib/kernel-smsserviceprovider-msg91.jar; \
+     wget "${runtime_dep_url_env}/kernel-smsserviceprovider-msg91-1.2.0-SNAPSHOT.jar" -O ./mosip-lib/kernel-smsserviceprovider-msg91-1.2.0-SNAPSHOT.jar; \
     java -jar -Dloader.path=./mosip-lib/ -Dspring.cloud.config.label="${spring_config_label_env}" -Dspring.profiles.active="${active_profile_env}" -Dspring.cloud.config.uri="${spring_config_url_env}" kernel-notification-service.jar ; \
     fi
-
